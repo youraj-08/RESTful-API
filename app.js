@@ -70,31 +70,80 @@ app.route("/articles")
 
     .delete(function (req, res) {
         Article.deleteMany({/*condition*/ }).then(() => {
-            console.log('Post deleted from DB.');
+            res.send('Post deleted from DB.');
         })
             .catch(err => {
                 // res.status(400).send("Unable to save post to database.");
-                console.log(err + "Unable delete from database.");
+                res.send(err + "Unable delete from database.");
             });
     });
 
 
 
-/////////////////////////////////////////// Requests targetting a single Articles////////////////////////////////////
+/////////////////////////////////////////// Requests targetting a single Articles ////////////////////////////////////
 
 
 app.route("/articles/:articleTitle")
 
 
-.get(async (req, res) => {
+    // 1) GET - Fetches a specific article. (Read->CRUD)
+
+    .get(async (req, res) => {
+        try {
+            const articles = await Article.findOne({ title: req.params.articleTitle });
+            res.send(articles);
+        }
+        catch (err) { res.send(err + " No articles with matching title found"); }
+    })
+
+
+    // 2) PUT - Updates a specific Article. (Update->CRUD)
+// PUT completely replaces an article and only the provided values are updated while the other values are set to null.
+
+
+.put(function(req,res){
+    Article.replaceOne(
+        {title: req.params.articleTitle}, 
+        {title: req.body.title, content: req.body.content})
+    .then(()=> {
+        res.send("Successfully updated the selected article.");
+    })
+    .catch(err => {
+        res.send(err);
+    })
+})
+
+
+
+// 3) PATCH - Updates a specific Article. (Update->CRUD)
+// PATCH updates only a specific part of the article whose values is provided by the user.
+
+
+.patch(async (req, res) => {
     try {
-        const articles = await Article.findOne({title: req.params.articleTitle});
-        res.send(articles);
+        await Article.updateOne(
+            { title: req.params.articleTitle },
+            { $set: req.body });
+        res.send("Successfully updated!");
+    } catch (err) {
+        res.send(err);
     }
-    catch (err) { res.send (err + " No articles with matching title found"); }
+})
+
+
+
+// 4) DELETE - Deletes only the specified Article. (Delete->CRUD)
+
+
+.delete(function (req, res) {
+    Article.deleteOne({ title: req.params.articleTitle }).then(() => {
+        res.send('Post deleted from DB.');
+    })
+        .catch(err => {
+            // res.status(400).send("Unable to save post to database.");
+            res.send(err + "Unable delete from database.");
+        });
 });
-
-
 
 
 app.listen(3000, function () {
